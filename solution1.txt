@@ -1,0 +1,155 @@
+"'
+The root cause was never the model — it was missing physics.
+The model had only 1 channel: raw time-domain samples. It was trying to distinguish Swell_with_Harmonics from Flicker_with_Swell by looking at the waveform shape alone, like trying to tell two similar-looking waves apart with your eyes when the real difference is in their frequency content.
+The confusion matrix was the key diagnostic. It showed the same pairs failing across every run regardless of architecture, learning rate, or weights:
+Swell_with_Harmonics  → Flicker_with_Swell    (250x)
+Sag_with_Harmonics    → Flicker_with_Sag      (190x)
+Transient             → Flicker               (149x)
+Loading the .mat file let us analyse the actual signals and confirmed that 250 Hz was the discriminating frequency — Swell_with_Harmonics has 31% more energy there than Flicker_with_Swell. The model simply couldn't see that from raw samples.
+The fix was 4 channels instead of 1:
+ChannelFeatureWhat it separatesch0Z-scored time domainBaseline shapech1Full FFT magnitudeAny frequency-based classch2Harmonic energy profile (50, 100, 150… Hz)Harmonics vs Flicker — the 250 Hz 5th harmonic is now explicitch3Hilbert envelopeFlicker — amplitude modulation over the cycle
+All the hyperparameter tuning across 6 runs (cosine schedules, wider models, warm restarts, class weights) was chasing a symptom. The actual problem was that physically distinct disturbances were indistinguishable from raw time-domain samples alone — and no amount of model complexity can learn a feature that isn't present in the input."'
+Device : cuda
+CSV files found : 17
+Loaded 17000 signals × 4 channels × 100 samples
+Classes : ['Flicker', 'Flicker_with_Sag', 'Flicker_with_Swell', 'Harmonics', 'Harmonics_with_Sag', 'Harmonics_with_Swell', 'Interruption', 'Notch', 'Oscillatory_Transient', 'Pure_Sinusoidal', 'Sag', 'Sag_with_Harmonics', 'Sag_with_Oscillatory_Transient', 'Swell', 'Swell_with_Harmonics', 'Swell_with_Oscillatory_Transient', 'Transient']
+Samples after augmentation : 102000
+
+================================================================
+  Training  |  epochs=100  batch=32
+================================================================
+  Epoch 001/100 | Loss 3039.6553 | Val Acc 0.7479 | LR 1.00e-03  ✓ saved
+  Epoch 002/100 | Loss 2116.5955 | Val Acc 0.8181 | LR 1.00e-03  ✓ saved
+  Epoch 003/100 | Loss 1843.7849 | Val Acc 0.8648 | LR 1.00e-03  ✓ saved
+  Epoch 004/100 | Loss 1680.0884 | Val Acc 0.8939 | LR 1.00e-03  ✓ saved
+  Epoch 005/100 | Loss 1564.6668 | Val Acc 0.8928 | LR 1.00e-03
+  Epoch 006/100 | Loss 1489.8523 | Val Acc 0.9140 | LR 1.00e-03  ✓ saved
+  Epoch 007/100 | Loss 1426.6181 | Val Acc 0.9262 | LR 1.00e-03  ✓ saved
+  Epoch 008/100 | Loss 1379.1378 | Val Acc 0.9096 | LR 1.00e-03
+  Epoch 009/100 | Loss 1340.7631 | Val Acc 0.9278 | LR 1.00e-03  ✓ saved
+  Epoch 010/100 | Loss 1313.2839 | Val Acc 0.9335 | LR 1.00e-03  ✓ saved
+  Epoch 011/100 | Loss 1283.6837 | Val Acc 0.9360 | LR 1.00e-03  ✓ saved
+  Epoch 012/100 | Loss 1259.8546 | Val Acc 0.9310 | LR 1.00e-03
+  Epoch 013/100 | Loss 1234.5136 | Val Acc 0.9440 | LR 1.00e-03  ✓ saved
+  Epoch 014/100 | Loss 1217.3393 | Val Acc 0.9475 | LR 1.00e-03  ✓ saved
+  Epoch 015/100 | Loss 1205.9116 | Val Acc 0.9407 | LR 5.00e-04
+  Epoch 016/100 | Loss 1131.8675 | Val Acc 0.9525 | LR 5.00e-04  ✓ saved
+  Epoch 017/100 | Loss 1111.6736 | Val Acc 0.9570 | LR 5.00e-04  ✓ saved
+  Epoch 018/100 | Loss 1102.7012 | Val Acc 0.9548 | LR 5.00e-04
+  Epoch 019/100 | Loss 1097.6322 | Val Acc 0.9525 | LR 5.00e-04
+  Epoch 020/100 | Loss 1096.0360 | Val Acc 0.9589 | LR 5.00e-04  ✓ saved
+  Epoch 021/100 | Loss 1083.2887 | Val Acc 0.9578 | LR 5.00e-04
+  Epoch 022/100 | Loss 1079.0423 | Val Acc 0.9597 | LR 5.00e-04  ✓ saved
+  Epoch 023/100 | Loss 1071.6730 | Val Acc 0.9581 | LR 5.00e-04
+  Epoch 024/100 | Loss 1070.5101 | Val Acc 0.9589 | LR 5.00e-04
+  Epoch 025/100 | Loss 1058.5139 | Val Acc 0.9607 | LR 5.00e-04  ✓ saved
+  Epoch 026/100 | Loss 1056.6943 | Val Acc 0.9578 | LR 5.00e-04
+  Epoch 027/100 | Loss 1052.8367 | Val Acc 0.9607 | LR 5.00e-04
+  Epoch 028/100 | Loss 1054.1678 | Val Acc 0.9586 | LR 5.00e-04
+  Epoch 029/100 | Loss 1043.9286 | Val Acc 0.9598 | LR 5.00e-04
+  Epoch 030/100 | Loss 1040.2682 | Val Acc 0.9577 | LR 2.50e-04
+  Epoch 031/100 | Loss 1007.0880 | Val Acc 0.9663 | LR 2.50e-04  ✓ saved
+  Epoch 032/100 | Loss 1002.5502 | Val Acc 0.9648 | LR 2.50e-04
+  Epoch 033/100 | Loss 995.0858 | Val Acc 0.9662 | LR 2.50e-04
+  Epoch 034/100 | Loss 995.7118 | Val Acc 0.9653 | LR 2.50e-04
+  Epoch 035/100 | Loss 995.8471 | Val Acc 0.9672 | LR 2.50e-04  ✓ saved
+  Epoch 036/100 | Loss 993.1707 | Val Acc 0.9678 | LR 2.50e-04  ✓ saved
+  Epoch 037/100 | Loss 988.4107 | Val Acc 0.9678 | LR 2.50e-04
+  Epoch 038/100 | Loss 986.9630 | Val Acc 0.9675 | LR 2.50e-04
+  Epoch 039/100 | Loss 988.6529 | Val Acc 0.9683 | LR 2.50e-04  ✓ saved
+  Epoch 040/100 | Loss 981.7949 | Val Acc 0.9691 | LR 2.50e-04  ✓ saved
+  Epoch 041/100 | Loss 978.3892 | Val Acc 0.9675 | LR 2.50e-04
+  Epoch 042/100 | Loss 980.5709 | Val Acc 0.9682 | LR 2.50e-04
+  Epoch 043/100 | Loss 980.6243 | Val Acc 0.9695 | LR 2.50e-04  ✓ saved
+  Epoch 044/100 | Loss 973.7664 | Val Acc 0.9691 | LR 2.50e-04
+  Epoch 045/100 | Loss 978.0207 | Val Acc 0.9664 | LR 1.25e-04
+  Epoch 046/100 | Loss 958.7569 | Val Acc 0.9720 | LR 1.25e-04  ✓ saved
+  Epoch 047/100 | Loss 952.7703 | Val Acc 0.9708 | LR 1.25e-04
+  Epoch 048/100 | Loss 958.8193 | Val Acc 0.9702 | LR 1.25e-04
+  Epoch 049/100 | Loss 955.0365 | Val Acc 0.9711 | LR 1.25e-04
+  Epoch 050/100 | Loss 952.4726 | Val Acc 0.9714 | LR 1.25e-04
+  Epoch 051/100 | Loss 950.4166 | Val Acc 0.9708 | LR 1.25e-04
+  Epoch 052/100 | Loss 950.5029 | Val Acc 0.9720 | LR 1.25e-04
+  Epoch 053/100 | Loss 949.9474 | Val Acc 0.9714 | LR 1.25e-04
+  Epoch 054/100 | Loss 950.4226 | Val Acc 0.9710 | LR 1.25e-04
+  Epoch 055/100 | Loss 947.5138 | Val Acc 0.9711 | LR 1.25e-04
+  Epoch 056/100 | Loss 944.8092 | Val Acc 0.9728 | LR 1.25e-04  ✓ saved
+  Epoch 057/100 | Loss 949.6190 | Val Acc 0.9717 | LR 1.25e-04
+  Epoch 058/100 | Loss 948.9830 | Val Acc 0.9718 | LR 1.25e-04
+  Epoch 059/100 | Loss 944.5131 | Val Acc 0.9722 | LR 1.25e-04
+  Epoch 060/100 | Loss 943.9192 | Val Acc 0.9724 | LR 6.25e-05
+  Epoch 061/100 | Loss 934.7779 | Val Acc 0.9738 | LR 6.25e-05  ✓ saved
+  Epoch 062/100 | Loss 934.4023 | Val Acc 0.9737 | LR 6.25e-05
+  Epoch 063/100 | Loss 933.9003 | Val Acc 0.9744 | LR 6.25e-05  ✓ saved
+  Epoch 064/100 | Loss 931.9249 | Val Acc 0.9727 | LR 6.25e-05
+  Epoch 065/100 | Loss 932.6833 | Val Acc 0.9729 | LR 6.25e-05
+  Epoch 066/100 | Loss 931.4516 | Val Acc 0.9732 | LR 6.25e-05
+  Epoch 067/100 | Loss 933.5177 | Val Acc 0.9740 | LR 6.25e-05
+  Epoch 068/100 | Loss 931.0640 | Val Acc 0.9729 | LR 6.25e-05
+  Epoch 069/100 | Loss 931.6940 | Val Acc 0.9717 | LR 6.25e-05
+  Epoch 070/100 | Loss 930.1450 | Val Acc 0.9735 | LR 6.25e-05
+  Epoch 071/100 | Loss 929.1360 | Val Acc 0.9730 | LR 6.25e-05
+  Epoch 072/100 | Loss 930.3323 | Val Acc 0.9740 | LR 6.25e-05
+  Epoch 073/100 | Loss 931.1372 | Val Acc 0.9737 | LR 6.25e-05
+
+  Early stopping at epoch 73.
+
+  Best validation accuracy : 0.9744
+
+Loading best checkpoint…
+
+================================================================
+  Final Test Accuracy : 0.9760  (97.60%)
+================================================================
+
+================================================================
+  PER-CLASS ACCURACY
+================================================================
+  Flicker                                    ████████████████████ 100.0%
+  Flicker_with_Sag                           ██████████████████░░  93.0%
+  Flicker_with_Swell                         ███████████████████░  95.5%
+  Harmonics                                  ████████████████████ 100.0%
+  Harmonics_with_Sag                         ███████████████████░  96.6%
+  Harmonics_with_Swell                       ███████████████████░  97.4%
+  Interruption                               ███████████████████░  99.4%
+  Notch                                      ███████████████████░  99.8%
+  Oscillatory_Transient                      ███████████████████░  99.3%
+  Pure_Sinusoidal                            ████████████████████ 100.0%
+  Sag                                        ███████████████████░  97.0%
+  Sag_with_Harmonics                         ███████████████████░  96.9%
+  Sag_with_Oscillatory_Transient             ███████████████████░  96.3%
+  Swell                                      ███████████████████░  97.2%
+  Swell_with_Harmonics                       ███████████████████░  97.5%
+  Swell_with_Oscillatory_Transient           ███████████████████░  95.1%
+  Transient                                  ███████████████████░  98.2%
+
+================================================================
+  TOP CONFUSIONS  (true → predicted)
+================================================================
+  Flicker_with_Swell                     → Swell                                  (31x)
+  Flicker_with_Sag                       → Flicker_with_Swell                     (31x)
+  Swell                                  → Sag                                    (30x)
+  Swell_with_Oscillatory_Transient       → Flicker_with_Swell                     (29x)
+  Flicker_with_Sag                       → Sag                                    (29x)
+  Transient                              → Oscillatory_Transient                  (22x)
+  Sag_with_Oscillatory_Transient         → Flicker_with_Sag                       (20x)
+  Sag                                    → Interruption                           (20x)
+  Harmonics_with_Swell                   → Harmonics_with_Sag                     (20x)
+  Harmonics_with_Sag                     → Harmonics_with_Swell                   (20x)
+================================================================
+
+================================================================
+  DISTURBANCE LOCALISATION ANALYSIS
+================================================================
+  True class      : Flicker_with_Sag
+  Predicted class : Flicker_with_Sag
+----------------------------------------------------------------
+  Window 01  [000–050]  weight=0.4086 ◄ TOP
+  Window 02  [025–075]  weight=0.3387
+  Window 03  [050–100]  weight=0.2528
+----------------------------------------------------------------
+  Focus region : samples 0–50
+  Disturbance  : Flicker_with_Sag
+
+  Timeline : ██████████████████████████████████████████████████--------------------------------------------------
+================================================================
