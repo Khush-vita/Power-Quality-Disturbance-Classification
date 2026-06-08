@@ -1,6 +1,12 @@
 # Interpretable Power Quality Disturbance Classification using MIL
 
-Developed a Multi-Instance Learning (MIL) framework for automatic power quality disturbance classification using Zenodo benchmark datasets.
+# Overview 
+This project presents a deep learning framework for automatic classification of Power Quality Disturbances (PQDs) in electrical power systems.
+
+The proposed system combines signal processing techniques with an Attention-Based Multiple Instance Learning (MIL) architecture to accurately classify disturbances while also identifying the most relevant signal region responsible for the prediction.
+
+The model processes multiple representations of a power signal, including frequency-domain, harmonic, and envelope information, enabling robust disturbance recognition.
+
 
 ## Dataset
 - 17 Power Quality Disturbance Classes
